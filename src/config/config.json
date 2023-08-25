@@ -1,0 +1,5 @@
+{
+  "scan_folder": "scan",
+  "sub_folders": ["HN"],
+  "output_folder": "output"
+}
