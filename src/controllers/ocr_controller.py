@@ -8,6 +8,7 @@ from pdf2image import convert_from_path
 import pytesseract
 from src.utils.logger import Logger
 from src.utils.document_analyzer import DocumentAnalyzer
+from src.utils.learning_system import LearningSystem
 
 # Configuration pour Windows
 if platform.system() == 'Windows':
@@ -27,6 +28,7 @@ if platform.system() == 'Windows':
 
 class OCRController:
     logger = Logger()
+    learning_system = LearningSystem()
     
     @staticmethod
     def pdf_to_images(pdf_path):
@@ -117,8 +119,28 @@ class OCRController:
             shutil.copy2(pdf_path, output_path)
             OCRController.logger.info(f"✓ PDF copié et renommé: {output_path}")
             
-            # Log les métadonnées extraites pour info
-            OCRController.logger.debug(f"Métadonnées extraites - Date: {new_filename.split('_')[0]}, ")
+            # Enregistrer pour apprentissage
+            extracted_data = {
+                'date': new_filename.split('_')[0],
+                'supplier': extracted.get('supplier'),
+                'invoice': extracted.get('invoice'),
+                'original_text': full_text[:1000]  # Premiers 1000 caractères
+            }
+            
+            OCRController.learning_system.record_extraction(
+                pdf_path, full_text, extracted_data, new_filename
+            )
+            
+            # Sauvegarder pour révision potentielle  
+            try:
+                import sys
+                sys.path.append('scripts')
+                from review_results import ReviewInterface
+                review = ReviewInterface()
+                review.save_extraction_for_review(pdf_path, full_text, extracted_data, new_filename)
+            except ImportError:
+                # Si l'import échoue, continuer sans sauvegarder pour révision
+                pass
             
             return output_path
         except Exception as e:

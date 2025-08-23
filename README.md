@@ -35,18 +35,25 @@ admin-assistant-ocr/
 
 ### Windows
 
-1. Installer les prérequis (Python, Tesseract, Poppler)
-2. Lancer l'installation :
+1. **Installation automatique :**
    ```cmd
    scripts\install_windows.bat
    ```
-3. Placer vos PDFs dans `scan\HN\`
-4. Lancer le traitement :
+
+2. **Configuration interactive :**
+   ```cmd
+   python scripts\setup_user_config.py
+   ```
+
+3. **Premier traitement :**
    ```cmd
    run_windows.bat
    ```
 
-📖 Guide complet : [docs/INSTALLATION_WINDOWS.md](docs/INSTALLATION_WINDOWS.md)
+📖 **Guides détaillés :**
+- [Installation complète](docs/INSTALLATION_WINDOWS.md)
+- [Manuel utilisateur](docs/MANUEL_UTILISATEUR.md)
+- [Personnalisation avancée](docs/CUSTOMIZATION_GUIDE.md)
 
 ## 🔧 Configuration
 
@@ -55,7 +62,7 @@ Modifier `src/config/config.json` :
 ```json
 {
   "scan_folder": "scan",
-  "sub_folders": ["HN", "Factures", "Courriers"],
+  "sub_folders": ["Devis", "Factures", "Courriers"],
   "output_folder": "output"
 }
 ```
@@ -67,10 +74,11 @@ Les PDFs sont renommés automatiquement selon le format :
 YYYYMMDD_NomFournisseur_NumeroFacture.pdf
 ```
 
-Exemples :
-- `20240315_EDF_FAC2024001.pdf`
-- `20240122_Orange_Mobile_REF123456.pdf`
-- `20240201_SARL_Dupont_DEVIS789.pdf`
+Format CamelCase avec séparateurs pour une meilleure lisibilité :
+- `20240315_Edf_FAC2024001.pdf`
+- `20240122_OrangeMobile_REF123456.pdf`
+- `20240201_SarlDupont_DEVIS789.pdf`
+- `20240810_CaisseEpargne_BDC45678.pdf`
 
 ## 🎨 Fonctionnement
 
@@ -97,3 +105,70 @@ Les logs sont disponibles dans `logs/` avec :
 - **pytesseract** : Interface Python pour Tesseract
 - **pdf2image** : Conversion des PDFs
 - **Pillow** : Traitement d'images
+
+## 🧠 Mode Apprentissage
+
+Le système s'améliore automatiquement à chaque utilisation !
+
+### Fonctionnement Automatique
+- 📊 **Statistiques** : Enregistre le taux de succès de chaque extraction
+- 🏢 **Fournisseurs fréquents** : Apprend vos fournisseurs habituels
+- 📈 **Patterns efficaces** : Retient ce qui fonctionne bien
+
+### Correction Manuelle
+Après traitement, vous pouvez corriger les erreurs :
+
+```cmd
+# Réviser les derniers résultats et corriger si nécessaire
+python scripts/review_results.py
+```
+
+**Processus de correction :**
+1. 📋 Affiche les extractions récentes
+2. ❓ "Cette extraction est-elle correcte ?"
+3. ❌ Si NON → Saisir les bonnes valeurs
+4. 🧠 Le système apprend et s'améliore
+
+### Exemple d'Amélioration
+
+**Première fois :**
+```
+📄 facture_edf.pdf → 20240315_Destinataire_REF123.pdf ❌
+```
+
+**Correction :**
+```
+🏢 Nouveau fournisseur: Edf
+✅ Correction enregistrée
+```
+
+**Fois suivantes :**
+```
+📄 autre_facture_edf.pdf → 20240320_Edf_FAC456.pdf ✅
+🧠 Pattern reconnu automatiquement
+```
+
+### Configuration Personnalisée
+
+**Éviter votre adresse :** Éditez `src/config/profiles/[dossier].json`
+```json
+{
+  "user_info": {
+    "names": ["Votre Nom"],
+    "addresses": ["Votre Adresse"],
+    "companies": ["Votre Société"]
+  }
+}
+```
+
+**Mapper les fournisseurs :**
+```json
+{
+  "supplier_mappings": {
+    "Électricité de France": "Edf",
+    "Orange SA": "Orange"
+  }
+}
+```
+
+📖 Guide complet : [docs/CUSTOMIZATION_GUIDE.md](docs/CUSTOMIZATION_GUIDE.md)

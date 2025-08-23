@@ -234,8 +234,8 @@ class DocumentAnalyzer:
         if len(parts) == 1:
             parts.append('Document')
         
-        # Joindre avec underscore entre date et reste, puis CamelCase
-        filename = parts[0] + '_' + ''.join(parts[1:]) + '.pdf'
+        # Joindre toutes les parties avec des underscores
+        filename = '_'.join(parts) + '.pdf'
         
         DocumentAnalyzer.logger.info(f"Nom de fichier généré: {filename}")
         return filename

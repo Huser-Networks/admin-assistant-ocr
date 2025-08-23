@@ -1,0 +1,84 @@
+{
+  "questions_pour_amelioration": {
+    
+    "1_infos_personnelles": {
+      "question": "Quelles sont vos informations à EXCLURE ?",
+      "exemples_reponses": {
+        "noms": ["Jean Dupont", "J. DUPONT", "M. Dupont"],
+        "adresses": ["123 rue Example", "75001 Paris"],
+        "entreprises": ["Ma Société SARL"],
+        "telephones": ["06 12 34 56 78"],
+        "emails": ["jean@example.com"]
+      }
+    },
+    
+    "2_fournisseurs_frequents": {
+      "question": "Quels sont vos fournisseurs habituels ?",
+      "exemples_reponses": {
+        "utilities": ["EDF", "Engie", "Veolia"],
+        "telecom": ["Orange", "Free", "SFR", "Bouygues"],
+        "banques": ["Crédit Agricole", "BNP", "Société Générale"],
+        "assurances": ["AXA", "Allianz", "MAIF", "Groupama"],
+        "medical": ["CPAM", "Mutuelle", "Hôpital"],
+        "commerce": ["Amazon", "Fnac", "Carrefour"]
+      },
+      "besoin": "Pour créer les mappings et patterns spécifiques"
+    },
+    
+    "3_formats_specifiques": {
+      "question": "Avez-vous des formats de numéros spécifiques ?",
+      "exemples": {
+        "EDF": "Facture n° 123456789",
+        "Orange": "Référence : ORA-2024-001",
+        "Impots": "Numéro fiscal : 1234567890123"
+      }
+    },
+    
+    "4_problemes_rencontres": {
+      "question": "Quels problèmes avez-vous rencontrés ?",
+      "cas_courants": [
+        "Le destinataire est pris comme fournisseur",
+        "La mauvaise date est extraite",
+        "Le numéro de téléphone est pris comme référence",
+        "Le montant est dans le nom du fichier"
+      ]
+    },
+    
+    "5_structure_souhaitee": {
+      "question": "Comment voulez-vous organiser vos fichiers ?",
+      "options": {
+        "par_annee": "2024/EDF/20240315_EdfFacture123.pdf",
+        "par_fournisseur": "EDF/2024/20240315_Facture123.pdf",
+        "par_type": "Factures/EDF/20240315_EDF123.pdf",
+        "simple": "20240315_EdfFacture123.pdf"
+      }
+    }
+  },
+  
+  "ameliorations_possibles": {
+    
+    "1_detection_montants": {
+      "description": "Extraire et inclure les montants dans le nom",
+      "exemple": "20240315_Edf_89-50EUR.pdf",
+      "patterns": ["\\d+[,.]\\d{2}\\s*€", "EUR\\s*\\d+[,.]\\d{2}"]
+    },
+    
+    "2_categorisation_auto": {
+      "description": "Classer par type de document",
+      "types": ["Facture", "Devis", "Contrat", "Courrier", "Releve"],
+      "detection_par_mots_cles": true
+    },
+    
+    "3_detection_echeance": {
+      "description": "Extraire la date d'échéance en plus",
+      "mots_cles": ["échéance", "à payer avant", "date limite"],
+      "format_nom": "20240315_Ech20240415_Edf.pdf"
+    },
+    
+    "4_mode_apprentissage": {
+      "description": "Système pour corriger et apprendre",
+      "fonctionnement": "Après traitement, vous validez/corrigez le résultat",
+      "stockage": "corrections.json"
+    }
+  }
+}
