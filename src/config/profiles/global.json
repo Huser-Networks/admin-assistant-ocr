@@ -1,0 +1,37 @@
+{
+  "profile_name": "Global",
+  "description": "Configuration globale par défaut pour tous les dossiers",
+  
+  "user_info": {
+    "names": [],
+    "addresses": [],
+    "companies": [],
+    "emails": [],
+    "phones": [],
+    "siret": []
+  },
+  
+  "extraction_settings": {
+    "date_priority": "french",
+    "prefer_recent_dates": true,
+    "max_days_in_future": 30,
+    "language": "fra+eng"
+  },
+  
+  "naming_rules": {
+    "format": "{date}_{supplier}{invoice}",
+    "date_format": "YYYYMMDD",
+    "max_filename_length": 100,
+    "remove_accents": true,
+    "use_camel_case": true,
+    "separator": "_"
+  },
+  
+  "keywords_to_ignore": [
+    "destinataire",
+    "client",
+    "à l'attention de",
+    "livré à",
+    "facturer à"
+  ]
+}

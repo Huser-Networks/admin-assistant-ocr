@@ -1,0 +1,59 @@
+{
+  "profile_name": "Documents Personnels",
+  "description": "Configuration pour les documents personnels/familiaux",
+  "inherits_from": "global",
+  
+  "user_info": {
+    "names": [
+      "Jean Dupont",
+      "Marie Dupont"
+    ],
+    "addresses": [
+      "789 rue de la Famille",
+      "75012 Paris"
+    ],
+    "phones": [
+      "0612345678",
+      "0687654321"
+    ]
+  },
+  
+  "extraction_settings": {
+    "document_types": ["invoice", "insurance", "bank", "tax", "school"],
+    "priority_keywords": [
+      "facture",
+      "relevé",
+      "avis",
+      "attestation",
+      "déclaration"
+    ]
+  },
+  
+  "supplier_mappings": {
+    "Caisse d'Epargne": "CE",
+    "Crédit Agricole": "CA",
+    "EDF Particuliers": "EDF",
+    "Engie": "Engie",
+    "Free": "Free",
+    "SFR": "SFR",
+    "Impots": "DGFIP",
+    "Trésor Public": "DGFIP",
+    "CAF": "CAF",
+    "CPAM": "CPAM",
+    "Assurance Maladie": "CPAM"
+  },
+  
+  "special_rules": {
+    "extract_reference_client": true,
+    "detect_recurring_bills": true,
+    "group_by_year": true
+  },
+  
+  "document_categories": {
+    "bank": ["relevé", "compte", "virement"],
+    "insurance": ["assurance", "mutuelle", "sinistre"],
+    "tax": ["impôt", "taxe", "déclaration"],
+    "utilities": ["edf", "gdf", "eau", "gaz", "électricité"],
+    "telecom": ["mobile", "internet", "téléphone", "fibre"]
+  }
+}

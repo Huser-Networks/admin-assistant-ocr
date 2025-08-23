@@ -1,0 +1,47 @@
+{
+  "profile_name": "Mon Entreprise SARL",
+  "description": "Configuration pour les documents de l'entreprise",
+  "inherits_from": "global",
+  
+  "user_info": {
+    "names": [],
+    "companies": [
+      "Mon Entreprise SARL",
+      "Mon Entreprise"
+    ],
+    "addresses": [
+      "456 avenue du Commerce",
+      "75008 Paris"
+    ],
+    "siret": "12345678901234",
+    "tva": "FR12345678901"
+  },
+  
+  "extraction_settings": {
+    "document_types": ["invoice", "quote", "order", "delivery"],
+    "priority_keywords": [
+      "facture",
+      "devis",
+      "bon de commande",
+      "bon de livraison"
+    ]
+  },
+  
+  "supplier_mappings": {
+    "EDF Entreprises": "EDF",
+    "Orange Business": "Orange",
+    "Amazon Business": "Amazon"
+  },
+  
+  "special_rules": {
+    "extract_tva": true,
+    "extract_total_ht": true,
+    "extract_total_ttc": true,
+    "group_by_supplier": true
+  },
+  
+  "naming_rules": {
+    "format": "{date}_{supplier}_{invoice}_{total}",
+    "include_amount": true
+  }
+}

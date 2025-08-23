@@ -172,17 +172,31 @@ class DocumentAnalyzer:
         return without_accents
     
     @staticmethod
-    def clean_filename_part(text):
-        """Nettoie une partie du nom de fichier en gardant les caractères valides"""
+    def to_camel_case(text):
+        """Convertit un texte en CamelCase"""
+        # Enlever les accents d'abord
+        text = DocumentAnalyzer.remove_accents(text)
+        # Diviser par espaces, underscores, tirets
+        words = re.split(r'[\s_\-]+', text)
+        # Capitaliser chaque mot et joindre
+        camel = ''.join(word.capitalize() for word in words if word)
+        return camel
+    
+    @staticmethod
+    def clean_filename_part(text, use_camel_case=True):
+        """Nettoie une partie du nom de fichier"""
         # Enlever les accents
         text = DocumentAnalyzer.remove_accents(text)
-        # Remplacer les espaces et caractères spéciaux par underscore
-        text = re.sub(r'[^\w\-]', '_', text)
-        # Enlever les underscores multiples
-        text = re.sub(r'_{2,}', '_', text)
-        # Enlever les underscores au début et à la fin
-        text = text.strip('_')
-        return text
+        
+        if use_camel_case:
+            # Convertir en CamelCase
+            return DocumentAnalyzer.to_camel_case(text)
+        else:
+            # Ancien comportement avec underscores
+            text = re.sub(r'[^\w\-]', '_', text)
+            text = re.sub(r'_{2,}', '_', text)
+            text = text.strip('_')
+            return text
     
     @staticmethod
     def generate_filename(text, original_filename=None):
@@ -200,18 +214,19 @@ class DocumentAnalyzer:
             date = datetime.now().strftime('%Y%m%d')
             DocumentAnalyzer.logger.info("Pas de date trouvée, utilisation de la date du jour")
         
-        # Construire le nom de fichier
-        parts = [date]
+        # Construire le nom de fichier en CamelCase
+        parts = [date]  # La date reste en format YYYYMMDD
         
         if supplier:
-            # Nettoyer le nom du fournisseur (enlever accents, etc.)
-            supplier_clean = DocumentAnalyzer.clean_filename_part(supplier)
+            # Nettoyer le nom du fournisseur en CamelCase
+            supplier_clean = DocumentAnalyzer.clean_filename_part(supplier, use_camel_case=True)
             if supplier_clean:
                 parts.append(supplier_clean)
         
         if invoice_num:
-            # Nettoyer le numéro de facture
-            invoice_clean = DocumentAnalyzer.clean_filename_part(invoice_num)
+            # Pour les numéros, garder le format original mais nettoyer
+            invoice_clean = DocumentAnalyzer.remove_accents(invoice_num)
+            invoice_clean = re.sub(r'[^\w\-]', '', invoice_clean)
             if invoice_clean:
                 parts.append(invoice_clean)
         
@@ -219,7 +234,8 @@ class DocumentAnalyzer:
         if len(parts) == 1:
             parts.append('Document')
         
-        filename = '_'.join(parts) + '.pdf'
+        # Joindre avec underscore entre date et reste, puis CamelCase
+        filename = parts[0] + '_' + ''.join(parts[1:]) + '.pdf'
         
         DocumentAnalyzer.logger.info(f"Nom de fichier généré: {filename}")
         return filename

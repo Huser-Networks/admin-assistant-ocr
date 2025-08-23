@@ -1,0 +1,73 @@
+{
+  "user_info": {
+    "names": [
+      "Votre Nom",
+      "M. Dupont",
+      "Mme Martin"
+    ],
+    "addresses": [
+      "123 rue Example",
+      "75001 Paris"
+    ],
+    "companies": [
+      "Ma Société SARL",
+      "Mon Entreprise"
+    ],
+    "emails": [
+      "contact@example.com"
+    ],
+    "phones": [
+      "0123456789"
+    ],
+    "siret": [],
+    "keywords_to_ignore": [
+      "destinataire",
+      "client",
+      "à l'attention de",
+      "livré à",
+      "facturer à"
+    ]
+  },
+  
+  "extraction_zones": {
+    "supplier_zone": {
+      "description": "Zone où se trouve généralement l'émetteur/fournisseur",
+      "top_lines": 15,
+      "avoid_after_keywords": [
+        "destinataire",
+        "client",
+        "livraison",
+        "facturation",
+        "à l'attention",
+        "chez"
+      ],
+      "prefer_before_keywords": [
+        "facture",
+        "devis",
+        "bon de",
+        "date",
+        "référence"
+      ]
+    },
+    
+    "recipient_zone": {
+      "description": "Zone du destinataire à ignorer",
+      "keywords": [
+        "destinataire",
+        "client",
+        "livré à",
+        "facturer à",
+        "adresse de livraison",
+        "adresse de facturation"
+      ]
+    }
+  },
+  
+  "supplier_blacklist": {
+    "description": "Mots/phrases qui indiquent que ce n'est PAS le fournisseur",
+    "patterns": [
+      "\\b(destinataire|client|livré à|facturé à)\\b",
+      "\\b(votre|vos|vous)\\b.*\\b(commande|référence)\\b"
+    ]
+  }
+}

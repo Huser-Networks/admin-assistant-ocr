@@ -1,0 +1,46 @@
+{
+  "profile_name": "Hôpital Necker",
+  "description": "Configuration spécifique pour les documents médicaux",
+  "inherits_from": "global",
+  
+  "user_info": {
+    "names": [
+      "M. Dupont",
+      "Jean Dupont"
+    ],
+    "addresses": [
+      "123 rue de la Santé",
+      "75015 Paris"
+    ],
+    "companies": [],
+    "patient_id": "PAT123456"
+  },
+  
+  "extraction_settings": {
+    "document_types": ["medical", "invoice", "appointment"],
+    "priority_keywords": [
+      "consultation",
+      "examen",
+      "ordonnance",
+      "compte-rendu",
+      "hospitalisation"
+    ]
+  },
+  
+  "supplier_mappings": {
+    "Hôpital Necker": "HN",
+    "Hôpital Necker Enfants Malades": "HN",
+    "AP-HP": "APHP",
+    "Assistance Publique": "APHP"
+  },
+  
+  "special_rules": {
+    "extract_patient_id": true,
+    "extract_service": true,
+    "priority_date_keywords": [
+      "date de consultation",
+      "date d'examen",
+      "rendez-vous du"
+    ]
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "date_patterns": {
+    "french": {
+      "patterns": [
+        "\\b(\\d{1,2})[/-](\\d{1,2})[/-](\\d{4})\\b",
+        "\\b(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})\\b"
+      ],
+      "keywords": ["date", "le", "émise", "facture du", "document du", "établi", "échéance"],
+      "priority": 10
+    },
+    "french_text": {
+      "patterns": [
+        "\\b(\\d{1,2})\\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\\s+(\\d{4})\\b"
+      ],
+      "keywords": ["date", "le"],
+      "priority": 8
+    },
+    "iso": {
+      "patterns": [
+        "\\b(\\d{4})[/-](\\d{1,2})[/-](\\d{1,2})\\b"
+      ],
+      "keywords": ["date"],
+      "priority": 5
+    }
+  },
+  
+  "invoice_patterns": {
+    "standard": {
+      "keywords": ["facture n°", "facture no", "facture num", "invoice", "n° facture"],
+      "patterns": ["[\\s:]*(F?[A-Z0-9\\-/]+)"],
+      "max_length": 20
+    },
+    "reference": {
+      "keywords": ["référence", "ref.", "réf", "reference"],
+      "patterns": ["[\\s:]*(REF[A-Z0-9\\-/]+|[A-Z0-9]{4,})"],
+      "max_length": 30
+    },
+    "order": {
+      "keywords": ["commande n°", "order", "bon de commande"],
+      "patterns": ["[\\s:]*(CMD[A-Z0-9\\-/]+|BC[0-9]+)"],
+      "max_length": 20
+    },
+    "quote": {
+      "keywords": ["devis n°", "quote", "estimation"],
+      "patterns": ["[\\s:]*(DEV[A-Z0-9\\-/]+|D[0-9]+)"],
+      "max_length": 20
+    }
+  },
+  
+  "supplier_rules": {
+    "company_indicators": ["sarl", "sas", "sa", "eurl", "siren", "siret", "tva", "ste", "société", "inc", "ltd"],
+    "removal_patterns": ["\\b(siren|siret|tva|n°tva|rcs|ape|naf).*"],
+    "search_zones": {
+      "header": {"lines": [0, 10], "weight": 10},
+      "footer": {"lines": [-5, -1], "weight": 3}
+    }
+  },
+  
+  "document_types": {
+    "invoice": {
+      "identifiers": ["facture", "invoice", "bill"],
+      "date_field": "invoice_date",
+      "number_field": "invoice_number"
+    },
+    "quote": {
+      "identifiers": ["devis", "quote", "estimation"],
+      "date_field": "quote_date",
+      "number_field": "quote_number"
+    },
+    "order": {
+      "identifiers": ["commande", "order", "bon de commande"],
+      "date_field": "order_date",
+      "number_field": "order_number"
+    },
+    "delivery": {
+      "identifiers": ["livraison", "delivery", "bon de livraison"],
+      "date_field": "delivery_date",
+      "number_field": "delivery_number"
+    }
+  }
+}
