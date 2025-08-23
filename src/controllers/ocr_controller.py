@@ -2,10 +2,12 @@
 import os
 import json
 import platform
+import shutil
 from PIL import Image
 from pdf2image import convert_from_path
 import pytesseract
 from src.utils.logger import Logger
+from src.utils.document_analyzer import DocumentAnalyzer
 
 # Configuration pour Windows
 if platform.system() == 'Windows':
@@ -69,6 +71,7 @@ class OCRController:
     def process_pdf(pdf_path, output_folder="output"):
         OCRController.logger.info(f"Starting OCR process for: {pdf_path}")
         
+        # Extraire le texte via OCR
         images = OCRController.pdf_to_images(pdf_path)
         if not images:
             OCRController.logger.warning(f"No images extracted from {pdf_path}")
@@ -82,21 +85,43 @@ class OCRController:
             if text:
                 all_text.append(text)
         
-        # Save results
-        if all_text:
-            os.makedirs(output_folder, exist_ok=True)
-            base_name = os.path.splitext(os.path.basename(pdf_path))[0]
-            output_path = os.path.join(output_folder, f"{base_name}.txt")
-            
-            try:
-                with open(output_path, 'w', encoding='utf-8') as f:
-                    f.write('\n'.join(all_text))
-                OCRController.logger.info(f"✓ OCR results saved to: {output_path}")
-                return output_path
-            except Exception as e:
-                OCRController.logger.error(f"Failed to save results: {e}")
-                return None
-        else:
+        if not all_text:
             OCRController.logger.warning(f"No text extracted from {pdf_path}")
+            return None
+        
+        # Analyser le texte pour générer un nom intelligent
+        full_text = '\n'.join(all_text)
+        original_filename = os.path.basename(pdf_path)
+        new_filename = DocumentAnalyzer.generate_filename(full_text, original_filename)
+        
+        # Déterminer le sous-dossier de sortie (garder la même structure)
+        # Extraire le chemin relatif depuis scan/
+        path_parts = os.path.normpath(pdf_path).split(os.sep)
+        if 'scan' in path_parts:
+            scan_index = path_parts.index('scan')
+            # Récupérer les sous-dossiers après 'scan'
+            sub_folders = path_parts[scan_index + 1:-1]  # Exclure 'scan' et le nom de fichier
+            
+            # Créer le chemin de sortie avec la même structure
+            output_subfolder = os.path.join(output_folder, *sub_folders) if sub_folders else output_folder
+        else:
+            output_subfolder = output_folder
+        
+        # Créer le dossier de sortie si nécessaire
+        os.makedirs(output_subfolder, exist_ok=True)
+        
+        # Copier le PDF avec le nouveau nom
+        output_path = os.path.join(output_subfolder, new_filename)
+        
+        try:
+            shutil.copy2(pdf_path, output_path)
+            OCRController.logger.info(f"✓ PDF copié et renommé: {output_path}")
+            
+            # Log les métadonnées extraites pour info
+            OCRController.logger.debug(f"Métadonnées extraites - Date: {new_filename.split('_')[0]}, ")
+            
+            return output_path
+        except Exception as e:
+            OCRController.logger.error(f"Erreur lors de la copie du PDF: {e}")
             return None
 
