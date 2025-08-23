@@ -1,5 +1,5 @@
 {
   "scan_folder": "scan",
-  "sub_folders": ["HN"],
+  "sub_folders": ["HuserNetworks", "GuetaPintes", "Huser"],
   "output_folder": "output"
 }

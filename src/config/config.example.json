@@ -1,0 +1,13 @@
+{
+  "scan_folder": "scan",
+  "sub_folders": ["company", "invoices", "documents"],
+  "output_folder": "output",
+  "ocr_settings": {
+    "language": "fra+eng",
+    "tesseract_config": "--oem 3 --psm 6"
+  },
+  "processing": {
+    "max_workers": 4,
+    "file_extensions": [".pdf", ".jpg", ".png"]
+  }
+}
