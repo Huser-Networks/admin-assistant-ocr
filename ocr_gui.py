@@ -16,6 +16,9 @@ from pathlib import Path
 # Ajouter le chemin pour les imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Vérifier les dépendances au démarrage
+from src.utils.dependency_checker import DependencyChecker
+
 
 class OCRAssistantGUI:
     def __init__(self, root):
@@ -27,6 +30,7 @@ class OCRAssistantGUI:
         self.config_path = "src/config/config.json"
         self.hierarchical_config_path = "src/config/hierarchical_config.json"
         self.processing = False
+        self.dependencies_ok = False
         
         # Style
         style = ttk.Style()
@@ -37,6 +41,9 @@ class OCRAssistantGUI:
         
         # Charger la configuration
         self.load_configuration()
+        
+        # Vérifier les dépendances
+        self.check_dependencies()
         
         # Mettre à jour l'état initial
         self.update_status()
@@ -96,6 +103,10 @@ class OCRAssistantGUI:
                   command=self.show_stats, width=20).grid(row=1, column=0, padx=5, pady=5)
         ttk.Button(action_frame, text="🔄 Rafraîchir", 
                   command=self.update_status, width=20).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(action_frame, text="🔍 Vérifier Dépendances", 
+                  command=self.check_dependencies_gui, width=20).grid(row=2, column=0, padx=5, pady=5)
+        ttk.Button(action_frame, text="📦 Installer Dépendances", 
+                  command=self.install_dependencies, width=20).grid(row=2, column=1, padx=5, pady=5)
     
     def create_config_tab(self):
         """Onglet de configuration"""
@@ -632,6 +643,135 @@ class OCRAssistantGUI:
         else:
             # Pour Linux/Mac, lancer dans le terminal par défaut
             subprocess.Popen(command, shell=True)
+    
+    def check_dependencies(self):
+        """Vérifie les dépendances au démarrage"""
+        try:
+            checker = DependencyChecker()
+            installed, missing = checker.check_all_packages()
+            
+            if missing:
+                self.dependencies_ok = False
+                response = messagebox.askyesno(
+                    "Dépendances Manquantes",
+                    f"Des dépendances sont manquantes:\n{', '.join(missing)}\n\n"
+                    "Voulez-vous les installer maintenant?"
+                )
+                if response:
+                    self.install_dependencies()
+            else:
+                self.dependencies_ok = True
+        except Exception as e:
+            print(f"Erreur lors de la vérification des dépendances: {e}")
+            self.dependencies_ok = False
+    
+    def check_dependencies_gui(self):
+        """Vérifie les dépendances avec interface graphique"""
+        # Créer une fenêtre de vérification
+        check_window = tk.Toplevel(self.root)
+        check_window.title("Vérification des Dépendances")
+        check_window.geometry("600x400")
+        
+        # Zone de texte pour les résultats
+        text_widget = scrolledtext.ScrolledText(check_window, wrap=tk.WORD, 
+                                               font=('Consolas', 9))
+        text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Bouton de fermeture
+        ttk.Button(check_window, text="Fermer", 
+                  command=check_window.destroy).pack(pady=10)
+        
+        # Lancer la vérification dans un thread
+        def run_check():
+            import sys
+            from io import StringIO
+            
+            # Capturer la sortie
+            old_stdout = sys.stdout
+            sys.stdout = StringIO()
+            
+            try:
+                checker = DependencyChecker()
+                result = checker.full_check()
+                output = sys.stdout.getvalue()
+            finally:
+                sys.stdout = old_stdout
+            
+            # Afficher le résultat
+            text_widget.insert(tk.END, output)
+            
+            if result:
+                text_widget.insert(tk.END, "\n✅ Tout est prêt!")
+                self.dependencies_ok = True
+            else:
+                text_widget.insert(tk.END, "\n⚠️ Des composants sont manquants")
+                self.dependencies_ok = False
+        
+        thread = threading.Thread(target=run_check)
+        thread.start()
+    
+    def install_dependencies(self):
+        """Installe les dépendances manquantes"""
+        # Créer une fenêtre d'installation
+        install_window = tk.Toplevel(self.root)
+        install_window.title("Installation des Dépendances")
+        install_window.geometry("600x400")
+        
+        # Zone de texte pour les résultats
+        text_widget = scrolledtext.ScrolledText(install_window, wrap=tk.WORD,
+                                               bg='black', fg='green',
+                                               font=('Consolas', 9))
+        text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Boutons
+        button_frame = ttk.Frame(install_window)
+        button_frame.pack(pady=10)
+        
+        close_btn = ttk.Button(button_frame, text="Fermer", 
+                              command=install_window.destroy)
+        close_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Lancer l'installation dans un thread
+        def run_install():
+            text_widget.insert(tk.END, "🚀 Démarrage de l'installation...\n\n")
+            
+            checker = DependencyChecker()
+            installed, missing = checker.check_all_packages()
+            
+            if not missing:
+                text_widget.insert(tk.END, "✅ Toutes les dépendances sont déjà installées!\n")
+                self.dependencies_ok = True
+                return
+            
+            text_widget.insert(tk.END, f"📦 Packages à installer: {', '.join(missing)}\n\n")
+            
+            for package in missing:
+                text_widget.insert(tk.END, f"Installation de {package}...\n")
+                text_widget.see(tk.END)
+                install_window.update()
+                
+                if checker.install_package(package):
+                    text_widget.insert(tk.END, f"✅ {package} installé\n")
+                else:
+                    text_widget.insert(tk.END, f"❌ Échec pour {package}\n")
+                
+                text_widget.insert(tk.END, "\n")
+            
+            # Vérifier à nouveau
+            installed, still_missing = checker.check_all_packages()
+            
+            if not still_missing:
+                text_widget.insert(tk.END, "\n✅ Installation terminée avec succès!\n")
+                self.dependencies_ok = True
+                messagebox.showinfo("Succès", "Toutes les dépendances ont été installées!")
+            else:
+                text_widget.insert(tk.END, f"\n⚠️ Packages non installés: {', '.join(still_missing)}\n")
+                text_widget.insert(tk.END, "\nVeuillez les installer manuellement:\n")
+                text_widget.insert(tk.END, f"pip install {' '.join(still_missing)}\n")
+                self.dependencies_ok = False
+        
+        thread = threading.Thread(target=run_install)
+        thread.start()
 
 
 def main():

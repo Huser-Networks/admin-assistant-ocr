@@ -47,6 +47,28 @@ def main():
         input("\nAppuyez sur Entrée pour quitter...")
         return 1
     
+    # Vérifier les dépendances
+    print("Vérification des dépendances...")
+    check_cmd = [
+        str(venv_python), "-c",
+        "from src.utils.dependency_checker import DependencyChecker; "
+        "exit(0 if DependencyChecker().full_check() else 1)"
+    ]
+    
+    check_result = subprocess.run(check_cmd)
+    if check_result.returncode != 0:
+        print("\n[ATTENTION] Des dépendances sont manquantes.")
+        response = input("Installer automatiquement? (o/n): ")
+        if response.lower() in ['o', 'oui', 'y', 'yes']:
+            print("Installation des dépendances...")
+            install_cmd = [
+                str(venv_python), "-c",
+                "from src.utils.dependency_checker import DependencyChecker; "
+                "DependencyChecker().ensure_dependencies()"
+            ]
+            subprocess.run(install_cmd)
+            print()
+    
     # Lancer l'interface
     print("Lancement de l'interface...")
     print(f"Python: {venv_python}")
