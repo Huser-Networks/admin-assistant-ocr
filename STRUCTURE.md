@@ -5,21 +5,23 @@
 ```
 admin-assistant-ocr/
 │
-├── launch.bat           # Lanceur principal Windows
-├── launch.py           # Lanceur principal Python (multi-plateforme)
-├── install.bat         # Installation complète Windows
+├── START.bat          # ⭐ LANCEUR PRINCIPAL Windows
+├── INSTALL.bat        # ⭐ INSTALLATION Windows
 ├── main.py            # Script principal OCR
 ├── requirements.txt   # Dépendances Python
 │
 ├── gui/               # Interface graphique
 │   └── ocr_gui.py    # Application Tkinter
 │
-├── bin/              # Scripts de lancement archivés
-│   ├── launch_gui.bat
-│   └── launch_gui.py
+├── bin/              # Scripts de lancement
+│   ├── launch.bat    # Lanceur Windows simple
+│   ├── launch.py     # Lanceur Python
+│   └── archive/      # Anciens scripts
 │
-├── installers/       # Scripts d'installation
-│   ├── install_all.bat
+├── installers/       # Scripts d'installation et diagnostic
+│   ├── install.bat           # Installation complète
+│   ├── recreate_venv.bat     # Recrée l'environnement virtuel
+│   ├── check_python.bat      # Diagnostic Python
 │   ├── install_dependencies.py
 │   └── create_desktop_shortcut.py
 │
@@ -49,22 +51,30 @@ admin-assistant-ocr/
 
 ### Installation (première fois)
 ```bash
-# Windows
-install.bat
+# Windows - Double-cliquez sur:
+INSTALL.bat
 
-# Ou manuellement
-python -m venv ocr-venv
-ocr-venv\Scripts\activate
-pip install -r requirements.txt
+# Ou manuellement:
+installers\install.bat
 ```
 
 ### Lancement
 ```bash
 # Windows - Double-cliquez sur:
-launch.bat
+START.bat
 
-# Ou en ligne de commande:
-python launch.py
+# Ou depuis bin/:
+bin\launch.bat
+python bin\launch.py
+```
+
+### Diagnostic et maintenance
+```bash
+# Vérifier les versions Python:
+installers\check_python.bat
+
+# Recréer l'environnement virtuel:
+installers\recreate_venv.bat
 ```
 
 ## Points Importants

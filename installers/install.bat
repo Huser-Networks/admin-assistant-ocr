@@ -21,8 +21,28 @@ if errorlevel 1 (
 echo [OK] Python est installé
 echo.
 
-REM Créer l'environnement virtuel si nécessaire
-if not exist "ocr-venv\Scripts\python.exe" (
+REM Vérifier l'environnement virtuel
+if exist "ocr-venv\Scripts\python.exe" (
+    REM Tester si l'environnement virtuel fonctionne
+    ocr-venv\Scripts\python.exe --version >nul 2>&1
+    if errorlevel 1 (
+        echo [ERREUR] L'environnement virtuel existe mais ne fonctionne pas
+        echo Il a probablement été créé avec une autre version de Python
+        echo.
+        echo Suppression de l'ancien environnement...
+        rmdir /s /q ocr-venv
+        echo Création d'un nouvel environnement virtuel...
+        python -m venv ocr-venv
+        if errorlevel 1 (
+            echo [ERREUR] Impossible de créer l'environnement virtuel
+            pause
+            exit /b 1
+        )
+        echo [OK] Nouvel environnement virtuel créé
+    ) else (
+        echo [OK] Environnement virtuel existe et fonctionne
+    )
+) else (
     echo Création de l'environnement virtuel...
     python -m venv ocr-venv
     if errorlevel 1 (
@@ -31,8 +51,6 @@ if not exist "ocr-venv\Scripts\python.exe" (
         exit /b 1
     )
     echo [OK] Environnement virtuel créé
-) else (
-    echo [OK] Environnement virtuel existe déjà
 )
 
 echo.
