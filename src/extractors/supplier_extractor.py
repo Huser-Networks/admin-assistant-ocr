@@ -7,12 +7,23 @@ from src.extractors.base_extractor import BaseExtractor
 class SupplierExtractor(BaseExtractor):
     """Extracteur intelligent pour identifier le fournisseur en évitant le destinataire"""
     
-    def __init__(self):
+    def __init__(self, folder_name=None):
         super().__init__()
-        self.user_profile = self.load_user_profile()
+        self.folder_name = folder_name
+        
+        # Utiliser la config hiérarchique
+        from src.utils.hierarchical_config import HierarchicalConfig
+        self.config_manager = HierarchicalConfig()
+        
+        # Charger la config pour ce dossier spécifique
+        if folder_name:
+            self.user_profile = self.config_manager.get_folder_config(folder_name)
+        else:
+            # Fallback sur l'ancienne méthode
+            self.user_profile = self.load_user_profile()
     
     def load_user_profile(self):
-        """Charge le profil utilisateur pour filtrer les infos personnelles"""
+        """Charge le profil utilisateur pour filtrer les infos personnelles (fallback)"""
         try:
             with open('src/config/user_profile.json', 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -99,23 +110,34 @@ class SupplierExtractor(BaseExtractor):
         return False
     
     def contains_user_info(self, line):
-        """Vérifie si la ligne contient des informations de l'utilisateur"""
+        """
+        Vérifie si la ligne contient des informations de l'utilisateur
+        selon la configuration hiérarchique du dossier
+        """
+        if self.folder_name and hasattr(self.config_manager, 'is_user_info'):
+            # Utiliser la nouvelle méthode hiérarchique
+            return self.config_manager.is_user_info(line, self.folder_name)
+        
+        # Fallback sur l'ancienne méthode
         line_lower = line.lower()
         user_info = self.user_profile.get('user_info', {})
         
         # Vérifier les noms
         for name in user_info.get('names', []):
             if name.lower() in line_lower:
+                self.logger.debug(f"Nom utilisateur trouvé: {name}")
                 return True
         
         # Vérifier les adresses
         for address in user_info.get('addresses', []):
             if address.lower() in line_lower:
+                self.logger.debug(f"Adresse utilisateur trouvée: {address}")
                 return True
         
         # Vérifier les sociétés de l'utilisateur
         for company in user_info.get('companies', []):
             if company.lower() in line_lower:
+                self.logger.debug(f"Entreprise utilisateur trouvée: {company}")
                 return True
         
         return False

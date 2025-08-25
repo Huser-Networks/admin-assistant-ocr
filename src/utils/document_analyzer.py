@@ -124,8 +124,16 @@ class DocumentAnalyzer:
         return None
     
     @staticmethod
-    def extract_supplier(text):
-        """Extrait le nom du fournisseur"""
+    def extract_supplier(text, folder_name=None):
+        """Extrait le nom du fournisseur selon le dossier"""
+        # Utiliser l'extracteur intelligent avec le nom du dossier
+        from src.extractors.supplier_extractor import SupplierExtractor
+        extractor = SupplierExtractor(folder_name=folder_name)
+        return extractor.extract(text)
+    
+    @staticmethod  
+    def extract_supplier_legacy(text):
+        """Ancienne méthode d'extraction (fallback)"""
         lines = text.split('\n')
         
         # Stratégie 1: Chercher dans les premières lignes (souvent l'en-tête)
@@ -199,14 +207,14 @@ class DocumentAnalyzer:
             return text
     
     @staticmethod
-    def generate_filename(text, original_filename=None):
+    def generate_filename(text, original_filename=None, folder_name=None):
         """
         Génère un nom de fichier intelligent basé sur le contenu OCR
         Format: YYYYMMDD_Fournisseur_NumeroFacture.pdf
         """
-        # Extraire les métadonnées
+        # Extraire les métadonnées avec contexte de dossier
         date = DocumentAnalyzer.extract_date(text)
-        supplier = DocumentAnalyzer.extract_supplier(text)
+        supplier = DocumentAnalyzer.extract_supplier(text, folder_name=folder_name)
         invoice_num = DocumentAnalyzer.extract_invoice_number(text)
         
         # Si pas de date, utiliser la date du jour

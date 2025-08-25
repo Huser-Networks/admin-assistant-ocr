@@ -1,0 +1,92 @@
+{
+  "_comment": "EXEMPLE DE CONFIGURATION HIÉRARCHIQUE",
+  "_description": "Ce fichier montre comment configurer le système avec héritage et surcharges",
+  
+  "global": {
+    "profile_name": "Configuration Globale",
+    "description": "Infos partagées par TOUS les dossiers sauf surcharge",
+    
+    "user_info": {
+      "names": ["Jean Michel", "J. Michel", "M. Michel"],
+      "addresses": ["123 route de Pré", "75001 Paris"],
+      "companies": [],
+      "emails": ["jean.michel@email.com"],
+      "phones": ["0612345678"],
+      "_comment": "Ces infos seront IGNORÉES dans tous les dossiers (sauf si explicitement ajoutées avec +)"
+    },
+    
+    "supplier_mappings": {
+      "Électricité de France": "Edf",
+      "Orange France": "Orange",
+      "Crédit Agricole": "CA"
+    }
+  },
+  
+  "Personnel": {
+    "profile_name": "Documents Personnels",
+    "inherits": "global",
+    "overrides": {
+      "add": {},
+      "remove": {},
+      "_comment": "Utilise toute la config globale sans changement"
+    }
+  },
+  
+  "SdbSarl": {
+    "profile_name": "Salle de Bains SARL",
+    "inherits": "global",
+    "overrides": {
+      "add": {
+        "user_info": {
+          "companies": ["Salle de Bains SARL", "SDB SARL"],
+          "addresses": ["456 route du Chemin", "75008 Paris"],
+          "siret": "12345678901234"
+        },
+        "supplier_mappings": {
+          "Leroy Merlin": "LM",
+          "Castorama": "Casto"
+        }
+      },
+      "remove": {},
+      "_comment": "Ajoute l'entreprise SDB SARL en PLUS de la config globale"
+    }
+  },
+  
+  "ItSA": {
+    "profile_name": "Informatique SA",
+    "inherits": "global",
+    "overrides": {
+      "add": {
+        "user_info": {
+          "companies": ["Informatique SA", "IT SA"],
+          "addresses": ["789 avenue Tech", "92000 Nanterre"]
+        },
+        "supplier_mappings": {
+          "Microsoft": "MS",
+          "Amazon Web Services": "AWS"
+        }
+      },
+      "remove": {},
+      "_comment": "Ajoute l'entreprise IT SA en PLUS de la config globale"
+    }
+  },
+  
+  "DocumentsPote": {
+    "profile_name": "Documents pour mon pote",
+    "inherits": "global",
+    "overrides": {
+      "add": {
+        "user_info": {
+          "names": ["Justin Machin", "J. Machin"],
+          "addresses": ["999 rue de l'Ami"]
+        }
+      },
+      "remove": {
+        "user_info": {
+          "names": ["Jean Michel", "J. Michel", "M. Michel"]
+        }
+      },
+      "_comment": "RETIRE Jean Michel, AJOUTE Justin Machin, garde le reste du global"
+    }
+  }
+}

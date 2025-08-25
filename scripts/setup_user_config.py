@@ -7,23 +7,25 @@ import os
 import json
 import sys
 
-def create_directory_structure():
-    """Crée la structure de dossiers recommandée"""
+def create_directory_structure(sub_folders):
+    """Crée la structure de dossiers selon les choix utilisateur"""
     
-    folders = [
-        "scan/Personnel",
-        "scan/Entreprise", 
-        "scan/Medical",
-        "scan/Banque",
-        "scan/Factures",
-        "output",
-        "logs"
-    ]
+    print("\n📁 Création de la structure de dossiers...")
     
-    print("📁 Création de la structure de dossiers...")
-    for folder in folders:
+    # Dossiers de base toujours créés
+    base_folders = ["output", "logs"]
+    for folder in base_folders:
         os.makedirs(folder, exist_ok=True)
         print(f"  ✅ {folder}")
+    
+    # Créer les sous-dossiers scan selon les choix
+    for folder in sub_folders:
+        scan_folder = f"scan/{folder}"
+        output_folder = f"output/{folder}"
+        os.makedirs(scan_folder, exist_ok=True)
+        os.makedirs(output_folder, exist_ok=True)
+        print(f"  ✅ {scan_folder}")
+        print(f"  ✅ {output_folder}")
     
     print()
 
@@ -156,6 +158,51 @@ def create_user_profile(profile_name, user_info, suppliers):
     
     return profile_file
 
+def collect_folders():
+    """Collecte les dossiers souhaités par l'utilisateur"""
+    
+    print("📂 CONFIGURATION DES DOSSIERS")
+    print("="*30)
+    print("Créez les dossiers pour organiser vos documents.")
+    print("Exemples: Personnel, Factures, Medical, Banque, Entreprise1, etc.\n")
+    
+    folders = []
+    
+    # Suggestions par défaut
+    print("💡 Suggestions courantes:")
+    print("  - Personnel (documents personnels)")
+    print("  - Factures (toutes vos factures)")
+    print("  - Medical (documents médicaux)")
+    print("  - Banque (relevés bancaires)")
+    print("  - Entreprise (documents professionnels)")
+    print("  - Impots (documents fiscaux)")
+    print()
+    
+    print("📝 Ajoutez vos dossiers (appuyez sur Entrée pour terminer):")
+    print("Conseil: Utilisez des noms courts et sans espaces (ex: FacturesEDF)\n")
+    
+    while True:
+        folder_name = input(f"  Dossier {len(folders)+1}: ").strip()
+        
+        if not folder_name:
+            if len(folders) == 0:
+                print("  ⚠️  Au moins un dossier est nécessaire !")
+                continue
+            else:
+                break
+        
+        # Nettoyer le nom (enlever espaces, caractères spéciaux)
+        folder_clean = folder_name.replace(" ", "").replace("/", "").replace("\\", "")
+        
+        if folder_clean and folder_clean not in folders:
+            folders.append(folder_clean)
+            print(f"    ✅ Ajouté: {folder_clean}")
+        elif folder_clean in folders:
+            print(f"    ⚠️  '{folder_clean}' existe déjà")
+    
+    print(f"\n✅ {len(folders)} dossier(s) configuré(s): {', '.join(folders)}")
+    return folders
+
 def main():
     """Configuration interactive"""
     
@@ -164,25 +211,11 @@ def main():
     print("Ce script va vous aider à configurer rapidement")
     print("l'OCR Assistant selon vos besoins.\n")
     
+    # Collecte des dossiers souhaités
+    selected_folders = collect_folders()
+    
     # Créer la structure
-    create_directory_structure()
-    
-    # Dossiers à utiliser
-    print("📂 CHOIX DES DOSSIERS")
-    print("="*25)
-    print("Quels types de documents voulez-vous traiter ?")
-    
-    available_folders = ["Personnel", "Entreprise", "Medical", "Banque", "Factures"]
-    selected_folders = []
-    
-    for folder in available_folders:
-        choice = input(f"  Utiliser '{folder}' ? (o/n): ").lower()
-        if choice == 'o':
-            selected_folders.append(folder)
-    
-    if not selected_folders:
-        selected_folders = ["Personnel"]  # Au moins un dossier
-        print("  ⚠️  Aucun dossier sélectionné, utilisation de 'Personnel' par défaut")
+    create_directory_structure(selected_folders)
     
     # Configuration principale
     create_main_config(selected_folders)
@@ -197,11 +230,48 @@ def main():
     print(f"\n💾 CRÉATION DES PROFILS")
     print("="*25)
     
-    created_profiles = []
-    for folder in selected_folders:
-        profile_file = create_user_profile(folder, user_info, suppliers)
-        created_profiles.append(profile_file)
-        print(f"  ✅ Profil créé: {profile_file}")
+    # Demander si on veut le même profil pour tous ou personnalisé
+    if len(selected_folders) > 1:
+        print("\n🔧 Options de configuration:")
+        print("1. Utiliser la même configuration pour tous les dossiers")
+        print("2. Personnaliser chaque dossier séparément")
+        choice = input("\nVotre choix (1/2): ").strip()
+        
+        if choice == "2":
+            # Configuration personnalisée par dossier
+            created_profiles = []
+            for folder in selected_folders:
+                print(f"\n📁 Configuration pour '{folder}':")
+                print("-" * 30)
+                
+                # Demander si on veut des infos spécifiques
+                custom = input("  Voulez-vous des paramètres spécifiques ? (o/n): ").lower()
+                
+                if custom == 'o':
+                    print(f"\n  Configuration spécifique pour {folder}:")
+                    folder_user_info = collect_user_info()
+                    folder_suppliers = collect_suppliers()
+                else:
+                    folder_user_info = user_info
+                    folder_suppliers = suppliers
+                
+                profile_file = create_user_profile(folder, folder_user_info, folder_suppliers)
+                created_profiles.append(profile_file)
+                print(f"  ✅ Profil créé: {profile_file}")
+        else:
+            # Même config pour tous
+            created_profiles = []
+            for folder in selected_folders:
+                profile_file = create_user_profile(folder, user_info, suppliers)
+                created_profiles.append(profile_file)
+                print(f"  ✅ Profil créé: {profile_file}")
+    else:
+        # Un seul dossier
+        created_profiles = []
+        for folder in selected_folders:
+            profile_file = create_user_profile(folder, user_info, suppliers)
+            created_profiles.append(profile_file)
+            print(f"  ✅ Profil créé: {profile_file}")
     
     # Résumé final
     print(f"\n🎉 CONFIGURATION TERMINÉE !")

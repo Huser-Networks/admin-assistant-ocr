@@ -94,7 +94,16 @@ class OCRController:
         # Analyser le texte pour générer un nom intelligent
         full_text = '\n'.join(all_text)
         original_filename = os.path.basename(pdf_path)
-        new_filename = DocumentAnalyzer.generate_filename(full_text, original_filename)
+        
+        # Extraire le nom du dossier depuis le chemin
+        folder_name = None
+        path_parts = os.path.normpath(pdf_path).split(os.sep)
+        if 'scan' in path_parts:
+            scan_index = path_parts.index('scan')
+            if scan_index + 1 < len(path_parts):
+                folder_name = path_parts[scan_index + 1]
+        
+        new_filename = DocumentAnalyzer.generate_filename(full_text, original_filename, folder_name)
         
         # Déterminer le sous-dossier de sortie (garder la même structure)
         # Extraire le chemin relatif depuis scan/
