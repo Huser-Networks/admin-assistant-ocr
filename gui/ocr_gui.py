@@ -13,8 +13,8 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-# Ajouter le chemin pour les imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Ajouter le chemin parent pour les imports (gui est dans un sous-dossier)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Vérifier les dépendances au démarrage
 from src.utils.dependency_checker import DependencyChecker

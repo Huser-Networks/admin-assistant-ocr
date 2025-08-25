@@ -4,6 +4,7 @@ Vérificateur et installateur de dépendances
 """
 
 import sys
+import os
 import subprocess
 import importlib.util
 from typing import List, Tuple
@@ -44,16 +45,20 @@ class DependencyChecker:
     
     @staticmethod
     def install_package(package_name: str) -> bool:
-        """Installe un package via pip"""
+        """Installe un package via pip dans l'environnement virtuel"""
         try:
             print(f"📦 Installation de {package_name}...")
+            # Forcer l'installation dans l'environnement virtuel actuel
             subprocess.check_call([
-                sys.executable, "-m", "pip", "install", package_name
-            ])
+                sys.executable, "-m", "pip", "install", "--upgrade", package_name
+            ], env=os.environ.copy())
             print(f"✅ {package_name} installé avec succès")
             return True
         except subprocess.CalledProcessError as e:
             print(f"❌ Erreur lors de l'installation de {package_name}: {e}")
+            return False
+        except KeyboardInterrupt:
+            print(f"⚠️ Installation de {package_name} annulée par l'utilisateur")
             return False
     
     @classmethod
