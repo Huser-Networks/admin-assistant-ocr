@@ -2,6 +2,7 @@
 REM Lanceur principal OCR Assistant
 REM Redirige vers le bon script dans bin/
 
+chcp 65001 >nul
 cd /d "%~dp0"
 
 if not exist "ocr-venv\Scripts\python.exe" (
@@ -21,10 +22,10 @@ ocr-venv\Scripts\python.exe gui\ocr_gui.py
 
 if errorlevel 1 (
     echo.
-    echo [ERREUR] Problème détecté
+    echo [ERREUR] Probleme detecte
     echo.
     echo Options:
-    echo 1. Exécutez: installers\recreate_venv.bat
+    echo 1. Executez: installers\recreate_venv.bat
     echo 2. Ou: installers\check_python.bat pour diagnostic
     pause
 )

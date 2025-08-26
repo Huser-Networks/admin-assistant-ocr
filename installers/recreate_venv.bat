@@ -1,28 +1,30 @@
 @echo off
-REM Script pour recréer l'environnement virtuel avec la bonne version de Python
+REM Script pour recreer l'environnement virtuel avec la bonne version de Python
 
+chcp 65001 >nul
 cd /d "%~dp0"
+cd ..
 
 echo ====================================
 echo   RECREATION ENVIRONNEMENT VIRTUEL
 echo ====================================
 echo.
 
-REM Vérifier la version de Python installée
-echo Détection de Python...
+REM Verifier la version de Python installee
+echo Detection de Python...
 python --version
 if errorlevel 1 (
-    echo [ERREUR] Python n'est pas installé ou pas dans le PATH
+    echo [ERREUR] Python n'est pas installe ou pas dans le PATH
     pause
     exit /b 1
 )
 
 echo.
-echo [ATTENTION] Ceci va supprimer l'ancien environnement virtuel et en créer un nouveau.
+echo [ATTENTION] Ceci va supprimer l'ancien environnement virtuel et en creer un nouveau.
 echo.
 set /p confirm="Continuer ? (o/n): "
 if /i not "%confirm%"=="o" (
-    echo Annulé.
+    echo Annule.
     pause
     exit /b 0
 )
@@ -37,26 +39,26 @@ if exist "ocr-venv" (
         pause
         exit /b 1
     )
-    echo [OK] Ancien environnement supprimé
+    echo [OK] Ancien environnement supprime
 )
 
-REM Créer le nouvel environnement virtuel avec Python actuel
+REM Creer le nouvel environnement virtuel avec Python actuel
 echo.
-echo Création du nouvel environnement virtuel avec Python actuel...
+echo Creation du nouvel environnement virtuel avec Python actuel...
 python -m venv ocr-venv
 if errorlevel 1 (
-    echo [ERREUR] Impossible de créer l'environnement virtuel
+    echo [ERREUR] Impossible de creer l'environnement virtuel
     pause
     exit /b 1
 )
 
-echo [OK] Environnement virtuel créé
+echo [OK] Environnement virtuel cree
 
-REM Installer les dépendances
+REM Installer les dependances
 echo.
-echo Installation des dépendances...
+echo Installation des dependances...
 
-REM Mise à jour de pip
+REM Mise a jour de pip
 ocr-venv\Scripts\python.exe -m pip install --upgrade pip
 
 REM Installation des requirements
@@ -74,6 +76,6 @@ echo   ENVIRONNEMENT RECREE AVEC SUCCES
 echo ====================================
 echo.
 echo Vous pouvez maintenant lancer l'application avec:
-echo   launch.bat
+echo   START.bat
 echo.
 pause
