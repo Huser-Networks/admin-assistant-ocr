@@ -1,31 +1,18 @@
 # Structure du Projet OCR Assistant
 
-## Organisation des Dossiers
+## Organisation Simplifiée
 
 ```
 admin-assistant-ocr/
 │
-├── START.bat          # ⭐ LANCEUR PRINCIPAL Windows
-├── INSTALL.bat        # ⭐ INSTALLATION Windows
+├── START.bat          # ⭐ UNIQUE POINT D'ENTRÉE - Gère tout automatiquement
 ├── main.py            # Script principal OCR
 ├── requirements.txt   # Dépendances Python
 │
 ├── gui/               # Interface graphique
 │   └── ocr_gui.py    # Application Tkinter
 │
-├── bin/              # Scripts de lancement
-│   ├── launch.bat    # Lanceur Windows simple
-│   ├── launch.py     # Lanceur Python
-│   └── archive/      # Anciens scripts
-│
-├── installers/       # Scripts d'installation et diagnostic
-│   ├── install.bat           # Installation complète
-│   ├── recreate_venv.bat     # Recrée l'environnement virtuel
-│   ├── check_python.bat      # Diagnostic Python
-│   ├── install_dependencies.py
-│   └── create_desktop_shortcut.py
-│
-├── scripts/          # Scripts utilitaires
+├── scripts/          # Scripts utilitaires de configuration
 │   ├── configure_hierarchical.py
 │   ├── review_results.py
 │   └── ...
@@ -37,55 +24,43 @@ admin-assistant-ocr/
 │   └── config/       # Configuration
 │
 ├── docs/             # Documentation
-│   ├── MANUEL_UTILISATEUR.md
-│   ├── INSTALLATION_WINDOWS.md
-│   └── ...
 │
-├── logs/             # Fichiers de logs
-├── scan/             # Dossiers à scanner (créés automatiquement)
-├── output/           # Résultats OCR (créés automatiquement)
-└── ocr-venv/         # Environnement virtuel Python
+├── scan/             # Dossiers à scanner (créé automatiquement)
+├── output/           # Résultats OCR (créé automatiquement)
+├── logs/             # Fichiers de logs (créé automatiquement)
+└── ocr-venv/         # Environnement virtuel (créé automatiquement)
 ```
 
-## Utilisation
+## Utilisation Ultra-Simple
 
-### Installation (première fois)
-```bash
-# Windows - Double-cliquez sur:
-INSTALL.bat
+### 🚀 Un seul fichier à lancer : START.bat
 
-# Ou manuellement:
-installers\install.bat
-```
+Double-cliquez sur **START.bat** qui gère automatiquement :
 
-### Lancement
-```bash
-# Windows - Double-cliquez sur:
-START.bat
+1. **Vérification de Python** ✓
+2. **Détection/création de l'environnement virtuel** ✓
+3. **Installation des dépendances** ✓
+4. **Configuration initiale** ✓
+5. **Lancement de l'application** ✓
 
-# Ou depuis bin/:
-bin\launch.bat
-python bin\launch.py
-```
+### Fonctionnalités du START.bat
 
-### Diagnostic et maintenance
-```bash
-# Vérifier les versions Python:
-installers\check_python.bat
+- **Détection intelligente** : Vérifie si l'environnement virtuel existe et fonctionne
+- **Personnalisation** : Permet de choisir le nom de l'environnement virtuel
+- **Auto-réparation** : Recrée automatiquement le venv si problème de version Python
+- **Configuration guidée** : Demande nom/entreprise à la première utilisation
+- **Création des dossiers** : Crée automatiquement scan/, output/, logs/
 
-# Recréer l'environnement virtuel:
-installers\recreate_venv.bat
-```
+### En cas de problème
+
+Si l'application ne démarre pas :
+1. Supprimez le dossier `ocr-venv`
+2. Relancez `START.bat`
+3. Il recréera tout automatiquement
 
 ## Points Importants
 
-1. **Environnement Virtuel**: Toujours utiliser `ocr-venv` pour éviter les conflits
-2. **Lanceurs**: Utilisent automatiquement le bon environnement
-3. **GUI**: Se trouve dans le dossier `gui/`
-4. **Installation**: Le script `install.bat` configure tout automatiquement
-
-## Dépendances Système
-
-- **Python 3.8+**: Requis
-- **Tesseract OCR**: Installer dans `C:\Tools\Tesseract-OCR` ou `C:\Program Files\Tesseract-OCR`
-- **Poppler** (Windows): Pour pdf2image, installer dans `C:\Tools\poppler`
+- **Un seul fichier** : Plus besoin de multiples scripts, START.bat fait tout
+- **Intelligent** : Détecte et répare automatiquement les problèmes courants
+- **Flexible** : Permet de personnaliser le nom du venv si souhaité
+- **Guidé** : Configuration interactive pour les nouveaux utilisateurs
