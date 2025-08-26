@@ -32,6 +32,18 @@ class OCRAssistantGUI:
         self.processing = False
         self.dependencies_ok = False
         
+        # Statistiques de traitement
+        self.stats = {
+            "PDFs trouvés": 0,
+            "En cours": 0,
+            "Traités": 0,
+            "Erreurs": 0
+        }
+        
+        # Variables pour la révision
+        self.current_result = None
+        self.results_list = []
+        
         # Style
         style = ttk.Style()
         style.theme_use('clam')
@@ -47,6 +59,9 @@ class OCRAssistantGUI:
         
         # Mettre à jour l'état initial
         self.update_status()
+        
+        # Démarrer la mise à jour automatique des statistiques
+        self.auto_update_stats()
     
     def create_widgets(self):
         """Crée tous les widgets de l'interface"""
@@ -199,12 +214,21 @@ class OCRAssistantGUI:
         control_frame = ttk.LabelFrame(review_frame, text="Révision des Résultats", padding=10)
         control_frame.pack(fill=tk.X, padx=10, pady=10)
         
+        # Première ligne de boutons
         ttk.Button(control_frame, text="📋 Charger Derniers Résultats", 
-                  command=self.load_results, width=25).pack(side=tk.LEFT, padx=5)
+                  command=self.load_results, width=25).grid(row=0, column=0, padx=5, pady=5)
         ttk.Button(control_frame, text="✅ Valider", 
-                  command=self.validate_result, width=15).pack(side=tk.LEFT, padx=5)
+                  command=self.validate_result, width=15).grid(row=0, column=1, padx=5, pady=5)
         ttk.Button(control_frame, text="❌ Corriger", 
-                  command=self.correct_result, width=15).pack(side=tk.LEFT, padx=5)
+                  command=self.correct_result, width=15).grid(row=0, column=2, padx=5, pady=5)
+        
+        # Deuxième ligne - Navigation
+        ttk.Button(control_frame, text="⬅️ Précédent", 
+                  command=self.previous_result, width=15).grid(row=1, column=0, padx=5, pady=5)
+        self.result_counter = ttk.Label(control_frame, text="0/0")
+        self.result_counter.grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(control_frame, text="➡️ Suivant", 
+                  command=self.next_result, width=15).grid(row=1, column=2, padx=5, pady=5)
         
         # Affichage du résultat actuel
         result_frame = ttk.LabelFrame(review_frame, text="Résultat Actuel", padding=10)
@@ -563,46 +587,276 @@ class OCRAssistantGUI:
         self.processing = False
         self.console_text.insert(tk.END, "\n⏹️ Traitement arrêté\n")
     
+    def update_stats(self, stat_name, value):
+        """Met à jour une statistique"""
+        if stat_name in self.stats:
+            self.stats[stat_name] = value
+            self.stats_labels[stat_name].config(text=str(value))
+            self.root.update_idletasks()
+    
+    def auto_update_stats(self):
+        """Met à jour automatiquement les statistiques toutes les 5 secondes"""
+        if not self.processing:
+            # Compter les PDFs en attente
+            total_pdfs = 0
+            folders = self.config.get('sub_folders', [])
+            for folder in folders:
+                scan_path = f"scan/{folder}"
+                if os.path.exists(scan_path):
+                    pdfs = [f for f in os.listdir(scan_path) if f.lower().endswith('.pdf')]
+                    total_pdfs += len(pdfs)
+            
+            # Mettre à jour seulement si pas en cours de traitement
+            if self.stats["En cours"] == 0:
+                self.update_stats("PDFs trouvés", total_pdfs)
+        
+        # Programmer la prochaine mise à jour dans 5 secondes
+        self.root.after(5000, self.auto_update_stats)
+    
     def process_pdfs(self):
         """Traite les PDFs"""
         try:
-            # Simuler le traitement
+            # Réinitialiser les statistiques
+            self.update_stats("PDFs trouvés", 0)
+            self.update_stats("En cours", 0)
+            self.update_stats("Traités", 0)
+            self.update_stats("Erreurs", 0)
+            
             self.console_text.insert(tk.END, "▶️ Démarrage du traitement...\n")
+            
+            # Compter les PDFs dans les dossiers scan
+            total_pdfs = 0
+            folders = self.config.get('sub_folders', [])
+            for folder in folders:
+                scan_path = f"scan/{folder}"
+                if os.path.exists(scan_path):
+                    pdfs = [f for f in os.listdir(scan_path) if f.lower().endswith('.pdf')]
+                    total_pdfs += len(pdfs)
+            
+            self.update_stats("PDFs trouvés", total_pdfs)
+            self.console_text.insert(tk.END, f"📄 {total_pdfs} PDFs détectés\n")
             
             # Lancer le script réel
             process = subprocess.Popen(
                 ["python", "main.py"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                universal_newlines=True
+                universal_newlines=True,
+                cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             )
+            
+            processed_count = 0
+            error_count = 0
             
             for line in process.stdout:
                 if not self.processing:
                     process.terminate()
                     break
+                    
+                # Analyser la ligne pour mettre à jour les stats
+                line_lower = line.lower()
+                if "processing" in line_lower or "traitement" in line_lower:
+                    self.update_stats("En cours", 1)
+                elif "successfully" in line_lower or "succès" in line_lower or "terminé" in line_lower:
+                    processed_count += 1
+                    self.update_stats("Traités", processed_count)
+                    self.update_stats("En cours", 0)
+                elif "error" in line_lower or "erreur" in line_lower:
+                    error_count += 1
+                    self.update_stats("Erreurs", error_count)
+                    self.update_stats("En cours", 0)
+                
                 self.console_text.insert(tk.END, line)
                 self.console_text.see(tk.END)
                 self.root.update()
             
-            self.console_text.insert(tk.END, "\n✅ Traitement terminé\n")
+            self.update_stats("En cours", 0)
+            self.console_text.insert(tk.END, f"\n✅ Traitement terminé - {processed_count} fichiers traités, {error_count} erreurs\n")
             
         except Exception as e:
             self.console_text.insert(tk.END, f"\n❌ Erreur: {e}\n")
+            self.update_stats("Erreurs", self.stats["Erreurs"] + 1)
         finally:
             self.processing = False
+            self.update_stats("En cours", 0)
     
     def load_results(self):
         """Charge les derniers résultats pour révision"""
-        messagebox.showinfo("Info", "Chargement des derniers résultats...")
+        try:
+            # Chercher les fichiers traités récemment dans output/
+            self.results_list = []
+            output_folders = self.config.get('sub_folders', [])
+            
+            for folder in output_folders:
+                output_path = f"output/{folder}"
+                if os.path.exists(output_path):
+                    # Trouver les PDFs traités récemment
+                    pdf_files = []
+                    for f in os.listdir(output_path):
+                        if f.lower().endswith('.pdf'):
+                            full_path = os.path.join(output_path, f)
+                            mtime = os.path.getmtime(full_path)
+                            pdf_files.append((f, full_path, mtime, folder))
+                    
+                    # Trier par date de modification (plus récent d'abord)
+                    pdf_files.sort(key=lambda x: x[2], reverse=True)
+                    self.results_list.extend(pdf_files[:5])  # Prendre les 5 plus récents par dossier
+            
+            if self.results_list:
+                # Charger le premier résultat
+                self.current_result = 0
+                self.display_current_result()
+                messagebox.showinfo("Succès", f"{len(self.results_list)} résultats chargés")
+            else:
+                messagebox.showinfo("Info", "Aucun résultat récent trouvé dans les dossiers output/")
+                
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Erreur lors du chargement: {e}")
+    
+    def display_current_result(self):
+        """Affiche le résultat actuellement sélectionné"""
+        if not self.results_list or self.current_result is None:
+            return
+            
+        filename, full_path, mtime, folder = self.results_list[self.current_result]
+        
+        # Mettre à jour les labels
+        self.result_labels["Fichier Original"].config(text=filename)
+        self.result_labels["Nom Généré"].config(text=filename)
+        
+        # Extraire les informations du nom de fichier
+        name_parts = filename.replace('.pdf', '').split('_')
+        if len(name_parts) >= 3:
+            self.result_labels["Date Extraite"].config(text=name_parts[0] if name_parts[0] else "Non détectée")
+            self.result_labels["Fournisseur"].config(text=name_parts[1] if name_parts[1] else "Non détecté")
+            self.result_labels["Numéro"].config(text=name_parts[2] if name_parts[2] else "Non détecté")
+        
+        # Simuler l'aperçu OCR (on pourrait lire un fichier .txt correspondant)
+        preview_text = f"Dossier: {folder}\n"
+        preview_text += f"Traité le: {datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')}\n"
+        preview_text += f"Fichier: {filename}\n\n"
+        preview_text += "Aperçu OCR:\n" + "-"*50 + "\n"
+        preview_text += "[Le contenu OCR serait affiché ici]\n"
+        
+        self.preview_text.delete(1.0, tk.END)
+        self.preview_text.insert(tk.END, preview_text)
+        
+        # Mettre à jour le compteur
+        self.update_result_counter()
     
     def validate_result(self):
         """Valide le résultat actuel"""
-        messagebox.showinfo("Info", "Résultat validé et enregistré pour apprentissage")
+        if not self.results_list or self.current_result is None:
+            messagebox.showwarning("Attention", "Aucun résultat chargé")
+            return
+            
+        filename = self.results_list[self.current_result][0]
+        
+        try:
+            # Enregistrer la validation (on pourrait l'ajouter au système d'apprentissage)
+            messagebox.showinfo("Succès", f"Résultat '{filename}' validé et enregistré pour apprentissage")
+            
+            # Passer au suivant
+            if self.current_result < len(self.results_list) - 1:
+                self.current_result += 1
+                self.display_current_result()
+            else:
+                messagebox.showinfo("Info", "Tous les résultats ont été révisés")
+                
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Erreur lors de la validation: {e}")
     
     def correct_result(self):
-        """Corrige le résultat actuel"""
-        messagebox.showinfo("Info", "Interface de correction...")
+        """Ouvre l'interface de correction"""
+        if not self.results_list or self.current_result is None:
+            messagebox.showwarning("Attention", "Aucun résultat chargé")
+            return
+            
+        filename, full_path, _, folder = self.results_list[self.current_result]
+        
+        # Créer une fenêtre de correction
+        correction_window = tk.Toplevel(self.root)
+        correction_window.title(f"Correction: {filename}")
+        correction_window.geometry("600x500")
+        
+        # Frame principal
+        main_frame = ttk.Frame(correction_window, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Informations actuelles
+        current_frame = ttk.LabelFrame(main_frame, text="Informations actuelles", padding=10)
+        current_frame.pack(fill=tk.X, pady=10)
+        
+        name_parts = filename.replace('.pdf', '').split('_')
+        
+        ttk.Label(current_frame, text="Date:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        date_entry = ttk.Entry(current_frame, width=20)
+        date_entry.grid(row=0, column=1, padx=5, pady=5)
+        date_entry.insert(0, name_parts[0] if len(name_parts) > 0 else "")
+        
+        ttk.Label(current_frame, text="Fournisseur:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        supplier_entry = ttk.Entry(current_frame, width=30)
+        supplier_entry.grid(row=1, column=1, padx=5, pady=5)
+        supplier_entry.insert(0, name_parts[1] if len(name_parts) > 1 else "")
+        
+        ttk.Label(current_frame, text="Numéro:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        number_entry = ttk.Entry(current_frame, width=20)
+        number_entry.grid(row=2, column=1, padx=5, pady=5)
+        number_entry.insert(0, name_parts[2] if len(name_parts) > 2 else "")
+        
+        # Boutons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=10)
+        
+        def save_correction():
+            new_date = date_entry.get().strip()
+            new_supplier = supplier_entry.get().strip()
+            new_number = number_entry.get().strip()
+            
+            if new_date and new_supplier and new_number:
+                new_filename = f"{new_date}_{new_supplier}_{new_number}.pdf"
+                old_path = full_path
+                new_path = os.path.join(os.path.dirname(old_path), new_filename)
+                
+                try:
+                    # Renommer le fichier
+                    os.rename(old_path, new_path)
+                    
+                    # Mettre à jour la liste des résultats
+                    self.results_list[self.current_result] = (new_filename, new_path, 
+                                                            self.results_list[self.current_result][2],
+                                                            self.results_list[self.current_result][3])
+                    
+                    messagebox.showinfo("Succès", f"Fichier renommé en: {new_filename}")
+                    correction_window.destroy()
+                    self.display_current_result()
+                    
+                except Exception as e:
+                    messagebox.showerror("Erreur", f"Impossible de renommer: {e}")
+            else:
+                messagebox.showwarning("Attention", "Tous les champs sont requis")
+        
+        ttk.Button(button_frame, text="💾 Sauvegarder", command=save_correction).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="❌ Annuler", command=correction_window.destroy).pack(side=tk.LEFT, padx=5)
+    
+    def previous_result(self):
+        """Affiche le résultat précédent"""
+        if self.results_list and self.current_result is not None and self.current_result > 0:
+            self.current_result -= 1
+            self.display_current_result()
+    
+    def next_result(self):
+        """Affiche le résultat suivant"""
+        if self.results_list and self.current_result is not None and self.current_result < len(self.results_list) - 1:
+            self.current_result += 1
+            self.display_current_result()
+    
+    def update_result_counter(self):
+        """Met à jour le compteur de résultats"""
+        if self.results_list and self.current_result is not None:
+            self.result_counter.config(text=f"{self.current_result + 1}/{len(self.results_list)}")
+        else:
+            self.result_counter.config(text="0/0")
     
     def refresh_logs(self):
         """Rafraîchit les logs"""
