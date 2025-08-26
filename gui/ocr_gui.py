@@ -43,6 +43,8 @@ class OCRAssistantGUI:
         # Variables pour la révision
         self.current_result = None
         self.results_list = []
+        self.pending_correction = None  # Stocke la correction en attente
+        self.original_data = None  # Stocke les données originales
         
         # Style
         style = ttk.Style()
@@ -223,12 +225,14 @@ class OCRAssistantGUI:
                   command=self.correct_result, width=15).grid(row=0, column=2, padx=5, pady=5)
         
         # Deuxième ligne - Navigation
-        ttk.Button(control_frame, text="⬅️ Précédent", 
-                  command=self.previous_result, width=15).grid(row=1, column=0, padx=5, pady=5)
+        self.prev_button = ttk.Button(control_frame, text="⬅️ Précédent", 
+                                     command=self.previous_result, width=15)
+        self.prev_button.grid(row=1, column=0, padx=5, pady=5)
         self.result_counter = ttk.Label(control_frame, text="0/0")
         self.result_counter.grid(row=1, column=1, padx=5, pady=5)
-        ttk.Button(control_frame, text="➡️ Suivant", 
-                  command=self.next_result, width=15).grid(row=1, column=2, padx=5, pady=5)
+        self.next_button = ttk.Button(control_frame, text="➡️ Suivant", 
+                                     command=self.next_result, width=15)
+        self.next_button.grid(row=1, column=2, padx=5, pady=5)
         
         # Affichage du résultat actuel
         result_frame = ttk.LabelFrame(review_frame, text="Résultat Actuel", padding=10)
@@ -717,8 +721,20 @@ class OCRAssistantGUI:
         """Affiche le résultat actuellement sélectionné"""
         if not self.results_list or self.current_result is None:
             return
-            
+        
+        # Réinitialiser la correction en attente si on change de fichier
+        self.pending_correction = None
+        self.enable_navigation()
+        
         filename, full_path, mtime, folder = self.results_list[self.current_result]
+        
+        # Sauvegarder les données originales
+        self.original_data = {
+            'filename': filename,
+            'full_path': full_path,
+            'mtime': mtime,
+            'folder': folder
+        }
         
         # Mettre à jour les labels
         self.result_labels["Fichier Original"].config(text=filename)
@@ -745,16 +761,79 @@ class OCRAssistantGUI:
         self.update_result_counter()
     
     def validate_result(self):
-        """Valide le résultat actuel"""
+        """Valide le résultat actuel et l'enregistre pour l'apprentissage"""
         if not self.results_list or self.current_result is None:
             messagebox.showwarning("Attention", "Aucun résultat chargé")
             return
-            
-        filename = self.results_list[self.current_result][0]
+        
+        # Si correction en attente, l'appliquer d'abord
+        if self.pending_correction:
+            if not self.apply_pending_correction():
+                return  # Erreur lors de l'application
+        
+        filename, full_path, _, folder = self.results_list[self.current_result]
         
         try:
-            # Enregistrer la validation (on pourrait l'ajouter au système d'apprentissage)
-            messagebox.showinfo("Succès", f"Résultat '{filename}' validé et enregistré pour apprentissage")
+            # Extraire les informations du nom de fichier
+            name_parts = filename.replace('.pdf', '').split('_')
+            if len(name_parts) >= 3:
+                date_extracted = name_parts[0]
+                supplier_extracted = name_parts[1]
+                invoice_extracted = name_parts[2] if len(name_parts) > 2 else ""
+                
+                # Enregistrer dans le système d'apprentissage
+                from src.utils.learning_system import LearningSystem
+                learning = LearningSystem()
+                
+                # Enregistrer comme extraction réussie
+                learning.record_extraction(
+                    folder_name=folder,
+                    extraction_type="date",
+                    extracted_value=date_extracted,
+                    confidence=1.0
+                )
+                learning.record_extraction(
+                    folder_name=folder,
+                    extraction_type="supplier",
+                    extracted_value=supplier_extracted,
+                    confidence=1.0
+                )
+                learning.record_extraction(
+                    folder_name=folder,
+                    extraction_type="invoice",
+                    extracted_value=invoice_extracted,
+                    confidence=1.0
+                )
+                
+                # Créer un fichier de validation pour marquer ce fichier comme "vérifié"
+                validation_dir = "output/.validated"
+                os.makedirs(validation_dir, exist_ok=True)
+                
+                validation_file = os.path.join(validation_dir, f"{filename}.validated")
+                validation_data = {
+                    "filename": filename,
+                    "folder": folder,
+                    "validated_at": datetime.now().isoformat(),
+                    "date": date_extracted,
+                    "supplier": supplier_extracted,
+                    "invoice": invoice_extracted,
+                    "status": "validated"
+                }
+                
+                with open(validation_file, 'w', encoding='utf-8') as f:
+                    json.dump(validation_data, f, indent=2)
+                
+                messagebox.showinfo("Succès", 
+                    f"✅ '{filename}' validé!\n\n"
+                    f"Les données ont été enregistrées pour améliorer l'extraction:\n"
+                    f"• Date: {date_extracted}\n"
+                    f"• Fournisseur: {supplier_extracted}\n"
+                    f"• Numéro: {invoice_extracted}")
+            else:
+                messagebox.showwarning("Attention", 
+                    "Format de nom de fichier non reconnu.\n"
+                    "Utilisez 'Corriger' pour ajuster le nom.")
+                return
             
             # Passer au suivant
             if self.current_result < len(self.results_list) - 1:
@@ -814,30 +893,54 @@ class OCRAssistantGUI:
             new_number = number_entry.get().strip()
             
             if new_date and new_supplier and new_number:
-                new_filename = f"{new_date}_{new_supplier}_{new_number}.pdf"
-                old_path = full_path
-                new_path = os.path.join(os.path.dirname(old_path), new_filename)
+                # Nettoyer les champs pour éviter les caractères problématiques
+                import re
+                new_date = re.sub(r'[^\w\-]', '', new_date)
+                new_supplier = re.sub(r'[^\w\-]', '', new_supplier)  
+                new_number = re.sub(r'[^\w\-]', '', new_number)
                 
-                try:
-                    # Renommer le fichier
-                    os.rename(old_path, new_path)
-                    
-                    # Mettre à jour la liste des résultats
-                    self.results_list[self.current_result] = (new_filename, new_path, 
-                                                            self.results_list[self.current_result][2],
-                                                            self.results_list[self.current_result][3])
-                    
-                    messagebox.showinfo("Succès", f"Fichier renommé en: {new_filename}")
-                    correction_window.destroy()
-                    self.display_current_result()
-                    
-                except Exception as e:
-                    messagebox.showerror("Erreur", f"Impossible de renommer: {e}")
+                # Vérifier que les champs sont encore valides après nettoyage
+                if not new_date or not new_supplier or not new_number:
+                    messagebox.showwarning("Attention", "Les champs contiennent des caractères invalides")
+                    return
+                
+                new_filename = f"{new_date}_{new_supplier}_{new_number}.pdf"
+                
+                # Préparer la correction (ne pas l'appliquer)
+                self.pending_correction = {
+                    'old_path': full_path,
+                    'new_filename': new_filename,
+                    'date': new_date,
+                    'supplier': new_supplier,
+                    'number': new_number
+                }
+                
+                # Mettre à jour l'affichage avec les nouvelles données
+                self.result_labels["Nom Généré"].config(text=new_filename)
+                self.result_labels["Date Extraite"].config(text=new_date)
+                self.result_labels["Fournisseur"].config(text=new_supplier)
+                self.result_labels["Numéro"].config(text=new_number)
+                
+                # Désactiver la navigation
+                self.disable_navigation()
+                self.update_result_counter()
+                
+                messagebox.showinfo("Correction préparée", 
+                    f"Correction préparée: {new_filename}\n\n"
+                    "Cliquez sur 'Valider' pour appliquer la correction\n"
+                    "ou 'Corriger' à nouveau pour modifier.")
+                correction_window.destroy()
             else:
                 messagebox.showwarning("Attention", "Tous les champs sont requis")
         
-        ttk.Button(button_frame, text="💾 Sauvegarder", command=save_correction).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="❌ Annuler", command=correction_window.destroy).pack(side=tk.LEFT, padx=5)
+        def cancel_correction():
+            # Annuler et restaurer les données originales
+            if self.pending_correction:
+                self.cancel_pending_correction()
+            correction_window.destroy()
+        
+        ttk.Button(button_frame, text="💾 Préparer", command=save_correction).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="❌ Annuler", command=cancel_correction).pack(side=tk.LEFT, padx=5)
     
     def previous_result(self):
         """Affiche le résultat précédent"""
@@ -854,9 +957,102 @@ class OCRAssistantGUI:
     def update_result_counter(self):
         """Met à jour le compteur de résultats"""
         if self.results_list and self.current_result is not None:
-            self.result_counter.config(text=f"{self.current_result + 1}/{len(self.results_list)}")
+            status = ""
+            if self.pending_correction:
+                status = " [CORRECTION EN ATTENTE]"
+            self.result_counter.config(text=f"{self.current_result + 1}/{len(self.results_list)}{status}")
         else:
             self.result_counter.config(text="0/0")
+    
+    def enable_navigation(self):
+        """Active la navigation"""
+        self.prev_button.config(state="normal")
+        self.next_button.config(state="normal")
+    
+    def disable_navigation(self):
+        """Désactive la navigation"""
+        self.prev_button.config(state="disabled")
+        self.next_button.config(state="disabled")
+    
+    def apply_pending_correction(self):
+        """Applique la correction en attente avec backup"""
+        if not self.pending_correction:
+            return True
+            
+        old_path = self.pending_correction['old_path']
+        new_filename = self.pending_correction['new_filename']
+        new_path = os.path.join(os.path.dirname(old_path), new_filename)
+        
+        # Vérifications de sécurité
+        if not os.path.exists(old_path):
+            messagebox.showerror("Erreur", f"Fichier source introuvable: {old_path}")
+            return False
+            
+        if os.path.exists(new_path):
+            response = messagebox.askyesno("Fichier existe", 
+                f"Un fichier nommé '{new_filename}' existe déjà.\n"
+                "Voulez-vous le remplacer?")
+            if not response:
+                return False
+        
+        # Créer un backup temporaire
+        backup_path = old_path + ".backup"
+        try:
+            # Faire le backup
+            import shutil
+            shutil.copy2(old_path, backup_path)
+            
+            # Renommer le fichier
+            os.rename(old_path, new_path)
+            
+            # Si succès, supprimer le backup
+            os.remove(backup_path)
+            
+            # Mettre à jour la liste des résultats
+            self.results_list[self.current_result] = (
+                new_filename, 
+                new_path, 
+                self.results_list[self.current_result][2],
+                self.results_list[self.current_result][3]
+            )
+            
+            # Réactiver la navigation
+            self.pending_correction = None
+            self.enable_navigation()
+            
+            # Rafraîchir l'affichage
+            self.display_current_result()
+            
+            return True
+            
+        except Exception as e:
+            # En cas d'erreur, restaurer le backup
+            try:
+                if os.path.exists(backup_path):
+                    if not os.path.exists(old_path):
+                        os.rename(backup_path, old_path)
+                    else:
+                        os.remove(backup_path)
+            except:
+                pass
+            
+            messagebox.showerror("Erreur", f"Impossible d'appliquer la correction: {e}")
+            return False
+    
+    def cancel_pending_correction(self):
+        """Annule la correction en attente"""
+        if self.pending_correction and self.original_data:
+            # Restaurer les données originales
+            self.results_list[self.current_result] = (
+                self.original_data['filename'],
+                self.original_data['full_path'],
+                self.original_data['mtime'],
+                self.original_data['folder']
+            )
+            
+            self.pending_correction = None
+            self.enable_navigation()
+            self.display_current_result()
     
     def refresh_logs(self):
         """Rafraîchit les logs"""
